@@ -1,8 +1,14 @@
 package com.patrikturi.todoapp.controllers;
 
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.Resources;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,28 +25,38 @@ import com.patrikturi.todoapp.errors.TodoNotFoundException;
 public class TodoController {
 
 	@Autowired
-	TodoRepository repository;
+	private TodoRepository repository;
+	@Autowired
+	private TodoResourceAssembler assembler;
 
 	@GetMapping("/todos")
-	public List<Todo> all() {
-		return repository.findAll();
+	public Resources<Resource<Todo>> all() {
+		//@formatter:off
+		List<Resource<Todo>> todos = repository.findAll().stream().
+				map(assembler::toResource)
+				.collect(Collectors.toList());
+		//@formatter:on
+
+		return new Resources<>(todos, linkTo(methodOn(TodoController.class).all()).withSelfRel());
 	}
 
 	@PostMapping("/todos")
-	public Todo newTodo(@RequestBody Todo todo) {
-		return repository.save(todo);
+	public Resource<Todo> newTodo(@RequestBody Todo todo) {
+		repository.save(todo);
+		return assembler.toResource(todo);
 	}
 
 	@GetMapping("/todos/{id}")
-	public Todo one(@PathVariable("id") Long id) {
+	public Resource<Todo> one(@PathVariable("id") Long id) {
 
-		return repository.findById(id).orElseThrow(() -> new TodoNotFoundException(id));
+		Todo todo = repository.findById(id).orElseThrow(() -> new TodoNotFoundException(id));
+		return assembler.toResource(todo);
 	}
 
 	@PutMapping("/todos/{id}")
-	Todo replaceTodo(@RequestBody Todo newTodo, @PathVariable Long id) {
+	Resource<Todo> replaceTodo(@RequestBody Todo newTodo, @PathVariable Long id) {
 
-		return repository.findById(id).map(todo -> {
+		Todo returnedTodo = repository.findById(id).map(todo -> {
 			todo.setTitle(newTodo.getTitle());
 			todo.setOrder(newTodo.getOrder());
 			todo.setCompleted(newTodo.getCompleted());
@@ -49,6 +65,7 @@ public class TodoController {
 			newTodo.setId(id);
 			return repository.save(newTodo);
 		});
+		return assembler.toResource(returnedTodo);
 	}
 
 	@DeleteMapping("/todos/{id}")
