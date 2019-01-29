@@ -3,12 +3,15 @@ package com.patrikturi.todoapp.controllers;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,9 +44,11 @@ public class TodoController {
 	}
 
 	@PostMapping("/todos")
-	public Resource<Todo> newTodo(@RequestBody Todo todo) {
-		repository.save(todo);
-		return assembler.toResource(todo);
+	public ResponseEntity<?> newTodo(@RequestBody Todo todo) throws URISyntaxException {
+
+		Resource<Todo> resource = assembler.toResource(repository.save(todo));
+
+		return ResponseEntity.created(new URI(resource.getId().expand().getHref())).body(resource);
 	}
 
 	@GetMapping("/todos/{id}")
@@ -54,9 +59,9 @@ public class TodoController {
 	}
 
 	@PutMapping("/todos/{id}")
-	Resource<Todo> replaceTodo(@RequestBody Todo newTodo, @PathVariable Long id) {
+	ResponseEntity<?> replaceTodo(@RequestBody Todo newTodo, @PathVariable Long id) throws URISyntaxException {
 
-		Todo returnedTodo = repository.findById(id).map(todo -> {
+		Todo updatedTodo = repository.findById(id).map(todo -> {
 			todo.setTitle(newTodo.getTitle());
 			todo.setOrder(newTodo.getOrder());
 			todo.setCompleted(newTodo.getCompleted());
@@ -65,11 +70,16 @@ public class TodoController {
 			newTodo.setId(id);
 			return repository.save(newTodo);
 		});
-		return assembler.toResource(returnedTodo);
+
+		Resource<Todo> resource = assembler.toResource(updatedTodo);
+
+		return ResponseEntity.created(new URI(resource.getId().expand().getHref())).body(resource);
 	}
 
 	@DeleteMapping("/todos/{id}")
-	void deleteTodo(@PathVariable Long id) {
+	ResponseEntity<?> deleteTodo(@PathVariable Long id) {
 		repository.deleteById(id);
+
+		return ResponseEntity.noContent().build();
 	}
 }
