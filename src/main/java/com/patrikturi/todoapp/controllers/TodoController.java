@@ -34,11 +34,10 @@ public class TodoController {
 
 	@GetMapping("/todos")
 	public Resources<Resource<Todo>> all() {
-		//@formatter:off
-		List<Resource<Todo>> todos = repository.findAll().stream().
-				map(assembler::toResource)
+
+		List<Resource<Todo>> todos = repository.findAll().stream()
+				.map(assembler::toResource)
 				.collect(Collectors.toList());
-		//@formatter:on
 
 		return new Resources<>(todos, linkTo(methodOn(TodoController.class).all()).withSelfRel());
 	}

@@ -18,7 +18,7 @@ public class LoadDatabase {
 		return args -> {
 			log.info("Preloading " + repository.save(new Todo(new Long(1), "Task C", new Integer(3), Boolean.FALSE)));
 			log.info("Preloading " + repository.save(new Todo(new Long(2), "Task B", new Integer(2), Boolean.TRUE)));
-			log.info("Preloading " + repository.save(new Todo(new Long(3), "Task C", new Integer(1), Boolean.FALSE)));
+			log.info("Preloading " + repository.save(new Todo(new Long(3), "Task A", new Integer(1), Boolean.TRUE)));
 		};
 	}
 }
